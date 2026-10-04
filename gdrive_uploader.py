@@ -6,8 +6,11 @@ and automatic generation of public shareable links copied to the clipboard.
 
 from __future__ import annotations
 
+import html
 import json
 import logging
+import os
+import secrets
 import socket
 import sys
 import threading
@@ -48,9 +51,15 @@ DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files"
 # Minimal scope: only files created/opened by this app, plus user email for UI status
 SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email"
 
-# ShareX official built-in Google OAuth Desktop Client Credentials
-DEFAULT_CLIENT_ID = "810697162603-ag350u1fnmf3riubv91otme0v5fkk2d6.apps.googleusercontent.com"
-DEFAULT_CLIENT_SECRET = "mDft-efE0PUcwIRCLG8nkLD9"
+# ShareX official built-in Google OAuth Desktop Client Credentials (fallback)
+DEFAULT_CLIENT_ID = os.environ.get(
+    "GDRIVE_CLIENT_ID",
+    "810697162603-ag350u1fnmf3riubv91otme0v5fkk2d6.apps.googleusercontent.com",
+)
+DEFAULT_CLIENT_SECRET = os.environ.get(
+    "GDRIVE_CLIENT_SECRET",
+    "mDft-efE0PUcwIRCLG8nkLD9",
+)
 
 
 def find_sharex_gdrive_config() -> dict | None:
@@ -112,8 +121,15 @@ class _OAuthHandler(BaseHTTPRequestHandler):
 
         code = params.get("code", [None])[0]
         error = params.get("error", [None])[0]
+        state = params.get("state", [None])[0]
 
         server: _OAuthServer = self.server  # type: ignore
+
+        # CSRF Protection: verify state parameter
+        if server.expected_state and state != server.expected_state:
+            code = None
+            error = "安全校验失败：OAuth state 状态码不匹配（潜在 CSRF 攻击已被拦截）"
+
         server.auth_code = code
         server.auth_error = error
 
@@ -155,7 +171,8 @@ class _OAuthHandler(BaseHTTPRequestHandler):
 </html>"""
             status = 200
         else:
-            err_msg = error or "未获取到有效的授权码"
+            raw_err = error or "未获取到有效的授权码"
+            err_msg = html.escape(str(raw_err))
             body = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -205,6 +222,7 @@ class _OAuthServer(HTTPServer):
         super().__init__(server_address, RequestHandlerClass)
         self.auth_code: str | None = None
         self.auth_error: str | None = None
+        self.expected_state: str | None = None
 
 
 class GoogleDriveAuthManager(QObject):
@@ -228,8 +246,10 @@ class GoogleDriveAuthManager(QObject):
         try:
             port = find_available_port()
             redirect_uri = f"http://127.0.0.1:{port}/"
+            state = secrets.token_urlsafe(32)
 
             server = _OAuthServer(("127.0.0.1", port), _OAuthHandler)
+            server.expected_state = state
             self._server = server
 
             def _listen_worker():
@@ -259,6 +279,7 @@ class GoogleDriveAuthManager(QObject):
                 "scope": SCOPES,
                 "access_type": "offline",
                 "prompt": "consent",
+                "state": state,
             }
             auth_url = f"{GOOGLE_AUTH_URL}?{urllib.parse.urlencode(params)}"
             webbrowser.open(auth_url)

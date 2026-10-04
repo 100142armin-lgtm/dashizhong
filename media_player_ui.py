@@ -826,8 +826,6 @@ class YtDlpStreamWorker(QObject):
                         root / "cookies.txt",
                         Path(os.path.dirname(__file__)) / "cookies.txt",
                         Path(os.path.dirname(__file__)) / "youtube_cookies.txt",
-                        Path.cwd() / "cookies.txt",
-                        Path.cwd() / "youtube_cookies.txt",
                     ]:
                         if cc.is_file() and cc.stat().st_size > 0:
                             cookie_file = cc

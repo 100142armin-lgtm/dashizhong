@@ -297,6 +297,23 @@ class TestYouTubeFeedMonitor(unittest.TestCase):
             dlg._add_channel()
             self.assertEqual(len(state["media"]["subscriptions"]), 3)
 
+    def test_http_get_rejects_non_http_schemes(self):
+        with self.assertRaises(ValueError):
+            yfm.http_get("file:///C:/Windows/win.ini")
+        with self.assertRaises(ValueError):
+            yfm.http_get("ftp://example.com/test")
+
+    def test_parse_atom_feed_rejects_dtd_entity_bombs(self):
+        malicious_xml = """<?xml version="1.0"?>
+        <!DOCTYPE lolz [
+         <!ENTITY lol "lol">
+         <!ENTITY lol2 "&lol;&lol;">
+        ]>
+        <feed xmlns="http://www.w3.org/2005/Atom"><title>&lol2;</title></feed>"""
+        with self.assertRaises(ValueError):
+            yfm.parse_atom_feed(malicious_xml)
+
 
 if __name__ == "__main__":
     unittest.main()
+

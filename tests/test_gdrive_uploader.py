@@ -283,6 +283,57 @@ class GoogleDriveUploaderTests(unittest.TestCase):
         show_settings_code = text.split("def show_settings")[1].split("def start_deep_clean")[0]
         self.assertNotIn(".exec()", show_settings_code)
 
+    def test_oauth_state_csrf_and_xss_protection(self):
+        import io
+        from unittest.mock import MagicMock
+        from gdrive_uploader import _OAuthHandler, _OAuthServer
+
+        server = MagicMock(spec=_OAuthServer)
+        server.expected_state = "correct_secret_state"
+        server.auth_code = None
+        server.auth_error = None
+
+        # 1. State mismatch -> CSRF blocked
+        handler = _OAuthHandler.__new__(_OAuthHandler)
+        handler.server = server
+        handler.path = "/?code=malicious_code&state=wrong_state"
+        handler.wfile = io.BytesIO()
+        handler.send_response = MagicMock()
+        handler.send_header = MagicMock()
+        handler.end_headers = MagicMock()
+        handler.do_GET()
+
+        self.assertIsNone(server.auth_code)
+        self.assertIn("CSRF", server.auth_error)
+        handler.send_response.assert_called_with(400)
+
+        # 2. XSS in error message -> escaped
+        handler = _OAuthHandler.__new__(_OAuthHandler)
+        handler.server = server
+        handler.path = "/?error=%3Cscript%3Ealert(1)%3C%2Fscript%3E&state=correct_secret_state"
+        handler.wfile = io.BytesIO()
+        handler.send_response = MagicMock()
+        handler.send_header = MagicMock()
+        handler.end_headers = MagicMock()
+        handler.do_GET()
+
+        rendered = handler.wfile.getvalue().decode("utf-8")
+        self.assertNotIn("<script>", rendered)
+        self.assertIn("&lt;script&gt;", rendered)
+
+        # 3. Valid state & code -> success
+        handler = _OAuthHandler.__new__(_OAuthHandler)
+        handler.server = server
+        handler.path = "/?code=valid_code_xyz&state=correct_secret_state"
+        handler.wfile = io.BytesIO()
+        handler.send_response = MagicMock()
+        handler.send_header = MagicMock()
+        handler.end_headers = MagicMock()
+        handler.do_GET()
+
+        self.assertEqual(server.auth_code, "valid_code_xyz")
+        handler.send_response.assert_called_with(200)
+
 
 if __name__ == "__main__":
     unittest.main()

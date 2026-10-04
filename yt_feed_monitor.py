@@ -76,6 +76,9 @@ def http_get(url: str, timeout: int = 8) -> str:
         "Accept-Encoding": "gzip, deflate",
         "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
     }
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme.lower() not in ("http", "https"):
+        raise ValueError(f"不合法的 URL 协议方案: {parsed.scheme}，仅允许 http 与 https")
     req = urllib.request.Request(url, headers=headers)
 
     # 1. Fast Path: Use detected local proxy immediately if available
@@ -94,7 +97,7 @@ def http_get(url: str, timeout: int = 8) -> str:
 
     # 2. Try direct connection (with a moderate timeout)
     try:
-        with urllib.request.urlopen(req, timeout=min(5, timeout)) as resp:
+        with urllib.request.urlopen(req, timeout=min(5, timeout)) as resp:  # nosec B310 - scheme validated above
             raw = resp.read()
             if resp.headers.get("Content-Encoding") == "gzip" or raw[:2] == b"\x1f\x8b":
                 return gzip.decompress(raw).decode("utf-8", errors="replace")
@@ -120,7 +123,11 @@ def http_get(url: str, timeout: int = 8) -> str:
 
 def parse_atom_feed(xml_text: str) -> dict[str, Any]:
     """Parse YouTube Atom XML feed into structured dictionary."""
-    root = ET.fromstring(xml_text)
+    if not xml_text:
+        return {}
+    if "<!DOCTYPE" in xml_text or "<!ENTITY" in xml_text:
+        raise ValueError("检测到不安全的 XML 实体声明 (DTD/ENTITY)，已拒绝解析以防范 XML 实体注入攻击")
+    root = ET.fromstring(xml_text)  # nosec B314 - DTD and entity expansion prohibited above
     
     channel_title = ""
     title_elem = root.find(f"{ATOM_NS}title")
