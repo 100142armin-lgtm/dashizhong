@@ -14,7 +14,7 @@ from PyQt6.QtCore import QObject, QThread, pyqtSignal
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_REPO = "secure-artifacts/dashizhong"
+DEFAULT_REPO = "100142armin-lgtm/dashizhong"
 GITHUB_API_URL = f"https://api.github.com/repos/{DEFAULT_REPO}/releases/latest"
 GITHUB_RAW_VERSION_URL = f"https://raw.githubusercontent.com/{DEFAULT_REPO}/main/VERSION"
 

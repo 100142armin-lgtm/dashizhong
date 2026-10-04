@@ -1,6 +1,6 @@
 # 时钟闹钟
 
-下载正式版本：[GitHub Releases](https://github.com/secure-artifacts/dashizhong/releases/latest)。
+下载正式版本：[GitHub Releases](https://github.com/100142armin-lgtm/dashizhong/releases/latest)。
 版本变化与升级说明见 [更新日志](CHANGELOG.md)。
 
 功能：

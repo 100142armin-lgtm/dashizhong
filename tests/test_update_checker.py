@@ -53,7 +53,7 @@ class UpdateCheckerTests(unittest.TestCase):
             "tag_name": "v1.0.18",
             "name": "Clock/Alarm v1.0.18 发布",
             "body": "1. 界面优化\n2. 修复已知问题",
-            "html_url": "https://github.com/secure-artifacts/dashizhong/releases/tag/v1.0.18",
+            "html_url": "https://github.com/100142armin-lgtm/dashizhong/releases/tag/v1.0.18",
             "published_at": "2026-09-12T10:00:00Z",
             "assets": [
                 {
@@ -109,7 +109,7 @@ class UpdateCheckerTests(unittest.TestCase):
             current_version="1.0.17",
             title="新版发布",
             body="全新优化体验",
-            html_url="https://github.com/secure-artifacts/dashizhong/releases",
+            html_url="https://github.com/100142armin-lgtm/dashizhong/releases",
             published_at="2026-09-12",
             download_urls={"installer": "https://example.com/installer.exe"},
         )
