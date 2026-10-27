@@ -56,6 +56,9 @@ DEFAULT_STATE: dict[str, Any] = {
     "notes": [],
     "alarms": [],
     "timer": {},
+    "bookmarks": {
+        "auto_lock_on_close": False,
+    },
 }
 
 _WRITE_LOCK = threading.RLock()

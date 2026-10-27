@@ -64,7 +64,7 @@ foreach ($name in $buildOnlyDirectories) {
 }
 
 $appFiles = @(
-    "alarm_sounds.py", "autostart.py", "cleaner.py", "hotkeys.py", "main.py",
+    "alarm_sounds.py", "autostart.py", "bookmarks_vault.py", "bookmarks_browser_bridge.py", "bookmarks_ui.py", "cleaner.py", "hotkeys.py", "main.py",
     "media_player_ui.py", "productivity.py", "recorder_ui.py", "screen_recorder.py",
     "screenshot_app.py", "settings_ui.py", "simple_boards.py", "skin.py", "storage.py",
     "theme.py", "world_clock_ui.py", "logo.ico", "logo.png", "VERSION"

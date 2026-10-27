@@ -453,6 +453,18 @@ class FloatingWorldClock(QWidget):
         self.feature_toggle_btn.setToolTip("快捷功能菜单")
         self.feature_toggle_btn.clicked.connect(self._toggle_feature_menu)
 
+        from bookmarks_ui import BookmarkOrbWidget
+        from bookmarks_vault import get_bookmarks_vault
+
+        self.bookmarks_panel = None
+        self.bookmark_orb = BookmarkOrbWidget(self.time_hero)
+        self.bookmark_orb.set_visual_state(
+            unlocked=get_bookmarks_vault().is_unlocked(),
+            panel_open=False,
+        )
+        self.bookmark_orb.clicked.connect(self.toggle_bookmarks_panel)
+        self.bookmark_orb.context_action_requested.connect(self._on_bookmark_orb_context_action)
+
         self.feature_menu = QWidget()
         section_row = QHBoxLayout(self.feature_menu)
         section_row.setContentsMargins(0, 0, 0, 0)
@@ -701,6 +713,17 @@ class FloatingWorldClock(QWidget):
         if hasattr(self, "feature_toggle_btn"):
             self.feature_toggle_btn.move(14, 8)
             self.feature_toggle_btn.raise_()
+        if hasattr(self, "bookmark_orb") and hasattr(self, "time_hero"):
+            menu_h = (self.feature_menu.height() + 4) if (hasattr(self, "feature_menu") and self.feature_menu.isVisible()) else 0
+            hero_w = max(120, self.width() - 6)
+            hero_h = max(60, self.height() - 6 - menu_h)
+            orb_size = max(24, min(68, int(min(hero_w * 0.16, hero_h * 0.25))))
+            self.bookmark_orb.set_orb_size(orb_size)
+            margin_left = max(12, int(hero_w * 0.032))
+            margin_bottom = max(6, int(hero_h * 0.045))
+            orb_y = max(34, hero_h - orb_size - margin_bottom)
+            self.bookmark_orb.move(margin_left, orb_y)
+            self.bookmark_orb.raise_()
 
     def _build_time_hero(self) -> QWidget:
         """Edge-to-edge giant HH:MM with a smaller live seconds display."""
@@ -790,6 +813,7 @@ class FloatingWorldClock(QWidget):
 
         actions = [
             ("⏰  闹钟 / 世界时钟 / 倒计时", toggle_clock_details),
+            ("✨  灵动书签 (加密收藏夹)", self.toggle_bookmarks_panel),
             ("📋  待办事项", lambda: self.host.show_todos() if self.host else None),
             ("📝  便签", lambda: self.host.show_notes() if self.host else None),
             ("✂️  区域截图", lambda: self.host.start_screenshot_region() if self.host else None),
@@ -812,6 +836,48 @@ class FloatingWorldClock(QWidget):
 
         pos = self.feature_toggle_btn.mapToGlobal(QPoint(0, self.feature_toggle_btn.height() + 4))
         menu.exec(pos)
+
+    def _ensure_bookmarks_panel(self):
+        from bookmarks_ui import BookmarksFloatingPanel
+
+        if getattr(self, "bookmarks_panel", None) is None:
+            save_fn = getattr(getattr(self.host, "store", None), "save_state", None)
+            self.bookmarks_panel = BookmarksFloatingPanel(
+                parent=None,
+                config_getter=lambda: self.state_dict,
+                config_saver=save_fn,
+            )
+            self.bookmarks_panel.state_changed.connect(self._on_bookmarks_state_changed)
+        return self.bookmarks_panel
+
+    def _on_bookmarks_state_changed(self, unlocked: bool, is_visible: bool, accent_hex: str) -> None:
+        if hasattr(self, "bookmark_orb"):
+            self.bookmark_orb.set_visual_state(
+                unlocked=unlocked,
+                panel_open=is_visible,
+                accent_hex=accent_hex,
+            )
+
+    def toggle_bookmarks_panel(self) -> None:
+        panel = self._ensure_bookmarks_panel()
+        orb = getattr(self, "bookmark_orb", None)
+        panel.toggle_near_orb(orb_widget=orb, anchor_window=self)
+
+    def show_bookmarks_panel(self) -> None:
+        panel = self._ensure_bookmarks_panel()
+        orb = getattr(self, "bookmark_orb", None)
+        panel.show_near_orb(orb_widget=orb, anchor_window=self)
+
+    def _on_bookmark_orb_context_action(self, action_key: str) -> None:
+        from bookmarks_ui import export_bookmarks_html_interactive
+
+        panel = self._ensure_bookmarks_panel()
+        if action_key == "lock":
+            panel.lock_vault()
+        elif action_key == "export_html":
+            export_bookmarks_html_interactive(self, panel.vault)
+        elif action_key == "security":
+            panel.open_security_dialog()
 
     def _place_top_right(self) -> None:
         scr = QGuiApplication.primaryScreen()
@@ -1890,6 +1956,7 @@ class FloatingWorldClock(QWidget):
         """Scale the clock face with the window without clipping the digits."""
         self._place_resize_handles()
         super().resizeEvent(event)
+        QTimer.singleShot(0, self._place_resize_handles)
         if hasattr(self, "local_time"):
             self._fit_time_font()
             QTimer.singleShot(0, self._fit_time_font)

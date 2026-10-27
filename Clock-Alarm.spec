@@ -12,6 +12,9 @@ a = Analysis(
     ],
     hiddenimports=[
         "alarm_sounds",
+        "bookmarks_vault",
+        "bookmarks_browser_bridge",
+        "bookmarks_ui",
         "autostart",
         "cleaner",
         "hotkeys",

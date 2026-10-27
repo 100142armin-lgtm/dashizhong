@@ -20,6 +20,7 @@ HOTKEY_MAP = {
     "notes": 0xD005,
     "media_player": 0xD006,
     "cleaner": 0xD007,
+    "bookmarks": 0xD008,
 }
 
 MOD_ALT = 0x0001
@@ -156,6 +157,7 @@ class ClockAlarmHotkeys:
             "notes": ("Ctrl+Alt+N", (MOD_CONTROL | MOD_ALT, ord("N"))),
             "media_player": ("Ctrl+Alt+V", (MOD_CONTROL | MOD_ALT, ord("V"))),
             "cleaner": ("Ctrl+Alt+C", (MOD_CONTROL | MOD_ALT, ord("C"))),
+            "bookmarks": ("Ctrl+Alt+B", (MOD_CONTROL | MOD_ALT, ord("B"))),
         }
 
         for key, hotkey_id in HOTKEY_MAP.items():

@@ -750,6 +750,51 @@ class SettingsDialog(_StyledDialog):
 
         layout.addWidget(gdrive_group)
 
+        # Blink Encrypted Bookmarks & Security Section
+        bookmarks_group = QGroupBox("🔐 灵动书签与安全密码 (Blink 加密收藏夹)")
+        bookmarks_layout = QVBoxLayout(bookmarks_group)
+        bookmarks_layout.setSpacing(8)
+        bookmarks_cfg = state.setdefault("bookmarks", {})
+
+        bm_tip = QLabel(
+            "💡 灵动书签采用 <b>AES-256-GCM 硬件级加密</b> 与 <b>16 位安全急救码双密钥机制</b>。<br>"
+            "忘记密码时凭急救码即可无损重置密码，100% 保留全部历史书签；支持随时一键导出本地备份。"
+        )
+        bm_tip.setWordWrap(True)
+        bm_tip.setStyleSheet("color: #94a3b8; font-size: 12px; font-weight: 400;")
+        bookmarks_layout.addWidget(bm_tip)
+
+        self.bookmarks_auto_lock = QCheckBox("收起或关闭灵动书签面板时，自动加密锁定书签保险库")
+        self.bookmarks_auto_lock.setChecked(bool(bookmarks_cfg.get("auto_lock_on_close", False)))
+        bookmarks_layout.addWidget(self.bookmarks_auto_lock)
+
+        bm_btn_row1 = QHBoxLayout()
+        bm_btn_row1.setSpacing(8)
+        btn_bm_pwd = QPushButton("🔑 修改主密码 / 急救码无损重置")
+        btn_bm_pwd.clicked.connect(lambda: self._open_bookmarks_security("password"))
+        btn_bm_regen = QPushButton("♻️ 重新生成 16 位安全急救码")
+        btn_bm_regen.clicked.connect(lambda: self._open_bookmarks_security("regenerate"))
+        bm_btn_row1.addWidget(btn_bm_pwd)
+        bm_btn_row1.addWidget(btn_bm_regen)
+        bm_btn_row1.addStretch(1)
+        bookmarks_layout.addLayout(bm_btn_row1)
+
+        bm_btn_row2 = QHBoxLayout()
+        bm_btn_row2.setSpacing(8)
+        btn_bm_exp_html = QPushButton("📤 一键导出全部书签 (.html)")
+        btn_bm_exp_html.clicked.connect(self._export_bookmarks_html)
+        btn_bm_exp_enc = QPushButton("🔐 导出加密备份包 (.blinkbak)")
+        btn_bm_exp_enc.clicked.connect(self._export_bookmarks_encrypted)
+        btn_bm_imp = QPushButton("📥 增量导入书签 / 恢复备份...")
+        btn_bm_imp.clicked.connect(lambda: self._open_bookmarks_security("backup"))
+        bm_btn_row2.addWidget(btn_bm_exp_html)
+        bm_btn_row2.addWidget(btn_bm_exp_enc)
+        bm_btn_row2.addWidget(btn_bm_imp)
+        bm_btn_row2.addStretch(1)
+        bookmarks_layout.addLayout(bm_btn_row2)
+
+        layout.addWidget(bookmarks_group)
+
         # Global Hotkey Customization Section
         hotkey_group = QGroupBox("全局快捷键自定义")
         hotkey_layout = QVBoxLayout(hotkey_group)
@@ -765,6 +810,7 @@ class SettingsDialog(_StyledDialog):
         
         hotkey_meta = [
             ("world_clock", "闹钟 / 时钟 / 倒计时", "Ctrl+Alt+T"),
+            ("bookmarks", "灵动书签 (加密收藏夹)", "Ctrl+Alt+B"),
             ("screenshot", "区域截图", "Ctrl+Alt+A"),
             ("recorder", "屏幕录像", "Ctrl+Alt+R"),
             ("todos", "待办事项", "Ctrl+Alt+D"),
@@ -913,8 +959,28 @@ class SettingsDialog(_StyledDialog):
         prefs = self.state.setdefault("prefs", {})
         prefs["check_updates"] = bool(self.check_updates_auto.isChecked())
 
+        if hasattr(self, "bookmarks_auto_lock"):
+            bm_cfg = self.state.setdefault("bookmarks", {})
+            bm_cfg["auto_lock_on_close"] = bool(self.bookmarks_auto_lock.isChecked())
+
         self.save_state()
         self.accept()
+
+    def _open_bookmarks_security(self, tab: str = "password") -> None:
+        from bookmarks_ui import VaultSecurityDialog
+
+        dlg = VaultSecurityDialog(parent=self, initial_tab=tab)
+        dlg.exec()
+
+    def _export_bookmarks_html(self) -> None:
+        from bookmarks_ui import export_bookmarks_html_interactive
+
+        export_bookmarks_html_interactive(self)
+
+    def _export_bookmarks_encrypted(self) -> None:
+        from bookmarks_ui import export_bookmarks_encrypted_interactive
+
+        export_bookmarks_encrypted_interactive(self)
 
     def _on_manual_check_update(self) -> None:
         from skin import get_app_version

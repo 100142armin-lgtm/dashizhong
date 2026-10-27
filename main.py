@@ -113,6 +113,7 @@ class ClockAlarmApp(QObject):
         self.tray = self._make_tray()
         callbacks = {
             "world_clock": self.show_world_clock,
+            "bookmarks": self.show_bookmarks,
             "screenshot": self.start_screenshot_region,
             "recorder": self.show_recorder_board,
             "todos": self.show_todos,
@@ -186,6 +187,7 @@ class ClockAlarmApp(QObject):
         menu = QMenu()
         for text, callback in (
             ("闹钟 / 世界时钟 / 倒计时", self.show_clock_tools),
+            ("灵动书签 (加密收藏夹)", self.show_bookmarks),
             ("区域截图", self.start_screenshot_region),
             ("屏幕录像", self.show_recorder_board),
             ("待办事项", self.show_todos),
@@ -237,6 +239,7 @@ class ClockAlarmApp(QObject):
                 candidates.append(getattr(controller, "manager_win", None))
         if self.world_clock_board is not None:
             candidates.append(getattr(self.world_clock_board, "tools_window", None))
+            candidates.append(getattr(self.world_clock_board, "bookmarks_panel", None))
         windows = []
         for window in candidates:
             if isinstance(window, QWidget) and window not in windows:
@@ -334,6 +337,12 @@ class ClockAlarmApp(QObject):
         if self.world_clock_board is None:
             self.show_world_clock()
         self.world_clock_board.show_tools(1)
+
+    def show_bookmarks(self) -> None:
+        if self.world_clock_board is None:
+            self.show_world_clock()
+        if self.world_clock_board is not None:
+            self.world_clock_board.toggle_bookmarks_panel()
 
     def show_media_player2(self) -> None:
         from media_player_ui import MediaPlayerWindow
