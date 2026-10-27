@@ -84,7 +84,7 @@ def check_update_sync(
     try:
         req = _create_request(api_url, current_version, timeout)
         with opener.open(req, timeout=timeout) as resp:
-            data = json.loads(resp.read().decode("utf-8", errors="replace"))
+            data = json.loads(resp.read(5_000_000).decode("utf-8", errors="replace"))
 
         tag_name = data.get("tag_name", "").strip()
         latest_clean = re.sub(r"^[vV]", "", tag_name)
@@ -118,7 +118,7 @@ def check_update_sync(
     try:
         req = _create_request(raw_version_url, current_version, timeout)
         with opener.open(req, timeout=timeout) as resp:
-            raw_ver = resp.read().decode("utf-8", errors="replace").strip()
+            raw_ver = resp.read(5_000_000).decode("utf-8", errors="replace").strip()
 
         latest_clean = re.sub(r"^[vV]", "", raw_ver)
         has_update = is_newer_version(latest_clean, current_version)

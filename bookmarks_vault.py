@@ -1490,6 +1490,11 @@ def parse_clipboard_spreadsheet(html_text: str = "", plain_text: str = "") -> di
     """
     html_s = str(html_text or "").strip()
     plain_s = str(plain_text or "").strip()
+    max_input_len = 10_000_000  # Cap clipboard payload to 10MB to mitigate ReDoS / memory spikes
+    if len(html_s) > max_input_len:
+        html_s = html_s[:max_input_len]
+    if len(plain_s) > max_input_len:
+        plain_s = plain_s[:max_input_len]
 
     grid: list[list[dict[str, Any]]] = []
 

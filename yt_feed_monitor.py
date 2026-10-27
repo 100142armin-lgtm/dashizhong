@@ -88,7 +88,7 @@ def http_get(url: str, timeout: int = 8) -> str:
             proxy_handler = urllib.request.ProxyHandler({"http": proxy, "https": proxy})
             opener = urllib.request.build_opener(proxy_handler)
             with opener.open(req, timeout=timeout) as resp:
-                raw = resp.read()
+                raw = resp.read(10_000_000)
                 if resp.headers.get("Content-Encoding") == "gzip" or raw[:2] == b"\x1f\x8b":
                     return gzip.decompress(raw).decode("utf-8", errors="replace")
                 return raw.decode("utf-8", errors="replace")
@@ -98,7 +98,7 @@ def http_get(url: str, timeout: int = 8) -> str:
     # 2. Try direct connection (with a moderate timeout)
     try:
         with urllib.request.urlopen(req, timeout=min(5, timeout)) as resp:  # nosec B310 - scheme validated above
-            raw = resp.read()
+            raw = resp.read(10_000_000)
             if resp.headers.get("Content-Encoding") == "gzip" or raw[:2] == b"\x1f\x8b":
                 return gzip.decompress(raw).decode("utf-8", errors="replace")
             return raw.decode("utf-8", errors="replace")

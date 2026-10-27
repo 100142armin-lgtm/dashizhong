@@ -660,16 +660,20 @@ def normalize_cookie_content(raw_text: str) -> str:
             lines = ["# Netscape HTTP Cookie File", "# Converted by ClockAlarm"]
             for item in json_items:
                 if isinstance(item, dict) and "name" in item and "value" in item:
-                    domain = item.get("domain") or ".youtube.com"
-                    flag = "TRUE" if str(domain).startswith(".") else "FALSE"
-                    path = item.get("path") or "/"
+                    raw_dom = str(item.get("domain") or ".youtube.com")
+                    domain = re.sub(r"[\r\n\t\s]+", "", raw_dom) or ".youtube.com"
+                    flag = "TRUE" if domain.startswith(".") else "FALSE"
+                    raw_path = str(item.get("path") or "/")
+                    path = re.sub(r"[\r\n\t]+", "", raw_path) or "/"
                     secure = "TRUE" if item.get("secure", True) else "FALSE"
                     try:
                         exp_val = int(float(item.get("expirationDate") or 2147483647))
                     except Exception:
                         exp_val = 2147483647
-                    name = str(item.get("name")).strip()
-                    val = str(item.get("value")).strip()
+                    raw_name = str(item.get("name") or "").strip()
+                    name = re.sub(r"[\r\n\t]+", "", raw_name)
+                    raw_val = str(item.get("value") or "").strip()
+                    val = re.sub(r"[\r\n\t]+", "", raw_val)
                     if name:
                         lines.append(f"{domain}\t{flag}\t{path}\t{secure}\t{exp_val}\t{name}\t{val}")
             if len(lines) > 2:

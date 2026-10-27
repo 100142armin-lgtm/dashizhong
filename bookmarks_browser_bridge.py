@@ -12,6 +12,7 @@ import ctypes
 from ctypes import wintypes
 import json
 import os
+import re
 import subprocess
 import sys
 import webbrowser
@@ -19,6 +20,13 @@ from pathlib import Path
 from typing import Any
 
 from bookmarks_vault import normalize_bookmark_url
+
+
+def _is_safe_profile_dir(profile_dir: str) -> bool:
+    """Validate profile directory name to prevent CLI argument injection."""
+    if not profile_dir or profile_dir.startswith("-"):
+        return False
+    return bool(re.match(r"^[\w\s.-]+$", profile_dir))
 
 KNOWN_BROWSERS: dict[str, dict[str, str]] = {
     "msedge.exe": {
@@ -315,7 +323,7 @@ def open_url_in_browser(
         profile_dir = str(custom_target.get("profile_dir") or "")
         if exe_path and _safe_is_file(Path(exe_path)):
             args = [exe_path]
-            if profile_dir:
+            if _is_safe_profile_dir(profile_dir):
                 args.append(f"--profile-directory={profile_dir}")
             args.append(norm_url)
             try:
@@ -332,7 +340,7 @@ def open_url_in_browser(
 
         if target_win and target_win.get("exe_path") and _safe_is_file(Path(target_win["exe_path"])):
             exe_path = target_win["exe_path"]
-            profile_dir = target_win.get("profile_dir") or ""
+            profile_dir = str(target_win.get("profile_dir") or "")
             hwnd = target_win.get("hwnd")
             if sys.platform == "win32" and hwnd:
                 try:
@@ -340,7 +348,7 @@ def open_url_in_browser(
                 except Exception:
                     pass
             args = [exe_path]
-            if profile_dir:
+            if _is_safe_profile_dir(profile_dir):
                 args.append(f"--profile-directory={profile_dir}")
             args.append(norm_url)
             try:
