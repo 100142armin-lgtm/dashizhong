@@ -3,7 +3,7 @@ numpy==2.5.1
 opencv-python-headless==5.0.0.93
 mss==10.2.0
 imageio-ffmpeg==0.6.0
-Pillow==12.3.0
+Pillow==13.0.0
 sounddevice==0.5.5
 pywin32==312; platform_system == "Windows"
 python-vlc==3.0.21203
