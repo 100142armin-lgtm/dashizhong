@@ -4,7 +4,7 @@
 #define MyAppName "Clock/Alarm"
 #define MyAppSafeName "Clock-Alarm"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.0.19"
+  #define MyAppVersion "1.0.20"
 #endif
 #ifndef MyAppURL
   #define MyAppURL ""
