@@ -156,14 +156,14 @@ def main():
         return True
     hotkeys._user32 = lambda: SimpleNamespace(RegisterHotKey=register, UnregisterHotKey=unregister)
     manager = hotkeys.ClockAlarmHotkeys({}, state)
-    assert len(bindings) == 7
+    assert len(bindings) == len(hotkeys.HOTKEY_MAP)
     manager.pause_screenshot_hotkeys()
     assert hotkeys.HOTKEY_MAP['screenshot'] not in bindings
     manager.resume_screenshot_hotkeys()
-    assert len(bindings) == 7
+    assert len(bindings) == len(hotkeys.HOTKEY_MAP)
     manager.close()
     assert not bindings
-    print('PASS settings save and seven hotkey registrations (OS APIs mocked)')
+    print('PASS settings save and hotkey registrations (OS APIs mocked)')
 
     with tempfile.TemporaryDirectory(prefix='media-smoke-') as folder:
         movie = Path(folder) / 'synthetic.avi'
